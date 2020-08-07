@@ -40,16 +40,13 @@ class arp_header(ethernet_header):
         self.opcode = b''
 
         self.sender_mac=sender_mac
-        if sender_ip:
-            self.sender_ip=socket.inet_aton(sender_ip)
-        else:
-            self.sender_ip=sender_ip
+
+        self.sender_ip=sender_ip
+
 
         self.target_mac=target_mac        
-        if target_ip:
-            self.target_ip=socket.inet_aton(target_ip)
-        else:
-            self.target_ip=target_ip
+
+        self.target_ip=target_ip
 
         self.packet=packet
     
@@ -64,6 +61,8 @@ class arp_header(ethernet_header):
     def make_arp_packet(self):
         self.ether_header = self.make_eth_packet()
         #print(len(self.ether_header))
+        #print(self.sender_ip)
+        #print(self.target_ip)
         self.arp_header = self.htype + self.protype + self.hsize + self.psize + self.opcode \
             + self.sender_mac+self.sender_ip + self.target_mac +self.target_ip
         self.arp_packet = self.ether_header+self.arp_header
