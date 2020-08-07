@@ -81,24 +81,26 @@ def main():
         target_ip=sys.argv[i+1]
 
         sender_ip_net=socket.inet_aton(sender_ip)
-
+        target_ip_net=socket.inet_aton(target_ip)
         arp_broadcast_send(ifname,my_mac,my_ip,sender_ip)
 
         # send broadcast packet to sender
         while True:
             #2048size buffer
             pkt=s.recvfrom(2048)
-            
-            #if(pkt[0][12:14]==b'\x08\x06'):
+
             sender_arp_reply=headers.arp_header(packet=pkt[0])
             sender_arp_reply.arp_parser()
             if sender_ip_net==sender_arp_reply.sender_ip:
 
                 # save sender ip, mac
-                sender_mac_ip.append([sender_arp_reply.sender_mac,sender_arp_reply.sender_ip])
+                sender_mac_ip.append([sender_arp_reply.sender_mac,sender_ip_net,target_ip_net])
 
                 break
-    print(sender_mac_ip)
+
+    for s_mac,s_ip,t_ip in sender_mac_ip:
+        #arp_poison_send()
+        print(s_mac,s_ip,t_ip)
     
     return
     
