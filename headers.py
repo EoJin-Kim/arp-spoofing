@@ -75,11 +75,11 @@ class arp_header(ethernet_header):
         self.ethernet_parser()
         
 
-        self.sender_mac=sender_mac
+        self.sender_mac=self.packet[0x16:0x1c]
 
-        self.sender_ip=sender_ip
+        self.sender_ip=self.packet[0x1c:0x20]
 
-        self.target_mac=target_mac        
+        self.target_mac=self.packet[0x20:0x26]
        
-        self.target_ip=target_ip
+        self.target_ip=self.packet[0x26:0x2a]
         return
