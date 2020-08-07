@@ -35,52 +35,20 @@ def get_my_ip(ifname):
 def get_mac_string(mac):
     return ':'.join('%02x' % b for b in mac[:6])
 
-def arp_broadcast(source_mac,source_ip,sender_ip):
-    ################ ethernet header
-    #print(s_mac)
-    source_mac
-    sender_mac=b'\x00\x00\x00\x00\x00\x00'
-    d_mac=b'\xff\xff\xff\xff\xff\xff'
-    arp_type=b'\x08\x06'
-    #print(type(d_mac))
-    eth=d_mac+source_mac+arp_type
-    #print(len(eth))
-    ################ arp_header
-    # ethernet = 0x0001
-    htype = b'\x00\x01'
 
-    # IP =0x0800
-    protype = b'\x08\x00'
-
-    # H/W address Length
-    hsize = b'\x06'
-
-    # Protocol Address Length
-    psize = b'\x04'
-
-    # 0x001 request
-    # 0x002 reply
-    opcode = b'\x00\x01'
-
-    source_ip=socket.inet_aton(source_ip)
-    sender_ip=socket.inet_aton(sender_ip)
-    #print(sender_ip)
-    arp_broadcase_packet = eth + htype + protype + hsize + psize + opcode + source_mac+source_ip + sender_mac +sender_ip
-    #print(len(arp_broadcase_packet))
-    return arp_broadcase_packet
-    
 def arp_broadcast_send(ifname,my_mac,my_ip,sender_ip):
-    # 0x0800 ETH_P_IP define
+    # 0x0806 ETH_P_ARP define
     s=socket.socket(socket.PF_PACKET,socket.SOCK_RAW,socket.ntohs(0x0800))
-    s.bind((ifname,socket.htons(0x0800)))
-    my_arp=headers.arp_header(my_mac,my_ip,b'\xff\xff\xff\xff\xff\xff',sender_ip)
+    s.bind((ifname,socket.htons(0x0806)))
+    my_arp=headers.arp_header(my_mac,my_ip,b'\x00\x00\x00\x00\x00\x00',sender_ip)
     my_arp.d_mac = b'\xff\xff\xff\xff\xff\xff'
     my_arp.s_mac=my_mac
     my_arp.eth_type=b'\x08\x06'
-    #my_arp.arp_request()
+    my_arp.arp_request()
     arp_broadcast_packet=my_arp.make_arp_packet()
-    #s.send(arp_broadcast_packet)
+    s.send(arp_broadcast_packet)
     s.close()
+
 def main():
     ifname = sys.argv[1]
     my_mac=get_mac(ifname)
@@ -90,27 +58,18 @@ def main():
         sender_ip=sys.argv[i]
         target_ip=sys.argv[i+1]
         arp_broadcast_send(ifname,my_mac,my_ip,sender_ip)
-        #print(sys.argv[i])
-        #print(sys.argv[i+1])
-    #print(len(my_mac))
-    #print(get_mac_string(my_mac))
-    #print(my_ip)
-    '''
-    # 0x0800 ETH_P_IP define
-    s=socket.socket(socket.PF_PACKET,socket.SOCK_RAW,socket.ntohs(0x0800))
-    s.bind((ifname,socket.htons(0x0800)))
-    arp_broadcast_packet=arp_broadcast(my_mac,my_ip,sys.argv[2])
-    #print(arp_broadcast_packet)
-    s.send(arp_broadcast_packet)
-    
-    ss=socket.socket(socket.PF_PACKET,socket.SOCK_RAW,socket.ntohs(0x0800))
+
+    s=socket.socket(socket.PF_PACKET,socket.SOCK_RAW,socket.ntohs(0x0806))
     while True:
         #2048size buffer
-        pkt=ss.recvfrom(2048)
+        pkt=s.recvfrom(2048)
         
-        #print(pkt[0])
+        #if(pkt[0][12:14]==b'\x08\x06'):
+        sender_arp_reply=headers.arp_header(packet=pkt[0])
+        sender_arp_reply.arp_parser()
+        print(pkt[0])
     return
-    '''
+    
 
 if __name__ == "__main__":
 
